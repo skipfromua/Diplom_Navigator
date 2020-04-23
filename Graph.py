@@ -1,4 +1,6 @@
 import math
+from myQueue import Queue
+from myQueue import PriorityQueue
 
 inf = 999999999
 
@@ -85,6 +87,12 @@ class Graph:
             if i.get_node() == id:
                 return i
 
+    def neighbors(self, node):
+        return node.get_all_connected_vertexes()
+
+    def cost(self, start, goal):
+        return pow((pow((start.get_x()-goal.get_x()), 2) + pow((start.get_y()-goal.get_y()), 2)), 1/2)
+
     def get_nearest_by_coordinates(self, x, y):
         min_range = math.sqrt(abs(self.__list_of_vertexes[0].get_x() - x)**2 + abs(self.__list_of_vertexes[0].get_y() - y)**2)
         looking_node = self.__list_of_vertexes[0]
@@ -103,8 +111,6 @@ class Graph:
         nodenum = self.get_vertex_by_id(node).get_node()
         dist = [None] * len(self.__list_of_vertexes)
         for i in range(len(dist)):
-            a = i
-            b = [self.__list_of_vertexes[nodenum]]
             dist[i] = [float('inf')]
             dist[i].append([self.__list_of_vertexes[nodenum]])
 
@@ -141,47 +147,38 @@ class Graph:
                     dist[node.get_node()][1].append(node)
         return dist
 
-    def a_start(self, node):
-        # Получает индекс узла (или поддерживает передачу int)
+    def heuristic(self, a, b):
+        (x1, y1) = a.get_x(), a.get_y()
+        (x2, y2) = b.get_x(), b.get_y()
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def A_star(self, node, goal):
         nodenum = self.get_vertex_by_id(node).get_node()
         dist = [None] * len(self.__list_of_vertexes)
         for i in range(len(dist)):
-            a = i
-            b = [self.__list_of_vertexes[nodenum]]
             dist[i] = [float('inf')]
             dist[i].append([self.__list_of_vertexes[nodenum]])
-
         dist[nodenum][0] = 0
-        # Добавляет в очередь все узлы графа
-        # Отмечает целые числа в очереди, соответствующие индексам узла
-        # локаций в массиве self.nodes
         queue = [i for i in range(len(self.__list_of_vertexes))]
-        # Набор увиденных на данный момент номеров
         seen = set()
         while len(queue) > 0:
-            # Получает узел в очереди, который еще не был рассмотрен
-            # и который находится на кратчайшем расстоянии от источника
             min_dist = inf
             min_node = None
             for n in queue:
                 if dist[n][0] < min_dist and n not in seen:
                     min_dist = dist[n][0]
                     min_node = n
-
-            # Добавляет мин. расстояние узла до увиденного, убирает очередь
             queue.remove(min_node)
             seen.add(min_node)
-            # Получает все следующие перескоки
             connections = self.connections_from(min_node)
-            # Для каждой связи обновляет путь и полное расстояние от
-            # исходного узла, если полное расстояние меньше
-            # чем текущее расстояние в массиве dist
             for (node, weight) in connections:
-                tot_dist = weight + min_dist
+                tot_dist = weight + min_dist + self.heuristic(self.get_vertex_by_id(min_node), node)
                 if tot_dist < dist[node.get_node()][0]:
                     dist[node.get_node()][0] = tot_dist
                     dist[node.get_node()][1] = list(dist[min_node][1])
                     dist[node.get_node()][1].append(node)
+            if self.get_vertex_by_id(min_node).get_node() == self.get_vertex_by_id(goal).get_node():
+                return dist
         return dist
 
 graph = Graph()

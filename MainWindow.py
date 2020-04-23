@@ -1,6 +1,6 @@
 from tkinter import *
 from Graph_db import graph, init_graph, write_to_file, connect_vertexes, save_ribs
-
+import time
 
 class MainWindow(Tk):
     def __init__(self):
@@ -25,8 +25,15 @@ class MainWindow(Tk):
         self.list_of_pares = []
         init_graph()
         graph.create_adj_matrix()
-        graph.dijkstra(24)
-        print(graph.get_graph())
+        start_timer = time.time()
+        for i in range(30):
+            graph.dijkstra(2)
+        print(time.time() - start_timer)
+        start_timer = time.time()
+        for i in range(30):
+            graph.A_star(2, 67)
+        print(time.time() - start_timer)
+
 
     def clear_canvas(self):
         self.canvas.delete('all')
@@ -92,7 +99,7 @@ class MainWindow(Tk):
         if self.list_of_pares:
             self.list_of_pares.append(graph.get_nearest_by_coordinates(event.x, event.y))
             print(graph.get_nearest_by_coordinates(event.x, event.y).get_node(), '\n')  #flag
-            self.dist = graph.dijkstra(self.list_of_pares[0].get_node())
+            self.dist = graph.A_star(self.list_of_pares[0].get_node(), self.list_of_pares[1].get_node())
             self.finish = self.list_of_pares[1]
             self.list_of_pares.clear()
         else:
