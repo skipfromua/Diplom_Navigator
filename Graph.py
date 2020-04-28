@@ -58,6 +58,7 @@ def single_connection(v1, v2):
 class Graph:
     __number_vertexes = 0
     __list_of_vertexes = []
+    __traffic_jams = []
 
     def create_adj_matrix(self):
         self.adj_mat = [[0] * len(self.__list_of_vertexes) for _ in range(len(self.__list_of_vertexes))]
@@ -66,6 +67,19 @@ class Graph:
                 if to_node in node.get_all_connected_vertexes():
                     self.adj_mat[node.get_node()][to_node.get_node()] = \
                         pow((pow((node.get_x()-to_node.get_x()), 2) + pow((node.get_y()-to_node.get_y()), 2)), 1/2)
+
+    def init_traffic_jams(self):
+        self.__traffic_jams.clear()
+        for i in range(len(self.__list_of_vertexes)):
+            self.__traffic_jams.append([])
+            for j in range(len(self.__list_of_vertexes)):
+                self.__traffic_jams[i].append(0)
+
+    def traffic_jams(self, way):
+        for i in range(len(self.adj_mat)):
+            for j in range(len(self.adj_mat[i])):
+                if self.adj_mat[i][j] != 0 and self.get_vertex_by_id(i) in way and self.get_vertex_by_id(j) in way:
+                    self.__traffic_jams[i][j] = 10000
 
     def add_vertex(self, x, y):
         self.__number_vertexes += 1
@@ -103,8 +117,8 @@ class Graph:
         return looking_node
 
     def connections_from(self, node):
-        return [(self.__list_of_vertexes[col_num], self.adj_mat[node][col_num]) for col_num in range(len(self.adj_mat[node])) if
-                self.adj_mat[node][col_num] != 0]
+        return [(self.__list_of_vertexes[col_num], (self.adj_mat[node][col_num] + self.__traffic_jams[node][col_num]))
+                for col_num in range(len(self.adj_mat[node])) if self.adj_mat[node][col_num] != 0]
 
     def dijkstra(self, node):
         # Получает индекс узла (или поддерживает передачу int)
