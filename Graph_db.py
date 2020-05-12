@@ -2,18 +2,19 @@ from Graph import Graph, Vertex, graph, connect_vertexes, single_connection
 
 
 def write_to_file(x, y):
-    file = open('db.txt', 'a')
+    file = open('db.bin', 'a')
     file.write(str(x) + "," + str(y) + "\n")
     file.close()
 
+
 def init_graph():
-    file = open('db.txt', 'r')
+    file = open('db.bin', 'r')
     for line in file.readlines():
         x = int(line.split(',')[0])
         y = int(line.split(',')[1])
         graph.add_vertex(x, y)
     file.close()
-    file = open('ribs_db.txt', 'r')
+    file = open('ribs_db.bin', 'r')
     for line in file.readlines():
         connected_vertexes = []
         new_line = rewrite_line(line)
@@ -25,11 +26,13 @@ def init_graph():
             single_connection(graph.get_vertex_by_id(connected_vertexes[0]), graph.get_vertex_by_id(connected_vertexes[i]))
         print(connected_vertexes)
 
+
 def save_ribs(graph):
-    file = open('ribs_db.txt', 'w')
+    file = open('ribs_db.bin', 'w')
     for vertex in graph.get_graph():
         file.write(str(vertex.get_node()) + "," + str(vertex.get_all_connected_vertexes_by_id()) + "\n")
     file.close()
+
 
 def rewrite_line(str):
     str = str.replace('[', '')

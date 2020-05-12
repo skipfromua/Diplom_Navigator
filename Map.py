@@ -1,5 +1,6 @@
 from tkinter import *
 from Graph_db import graph, init_graph, write_to_file, connect_vertexes, save_ribs
+import time
 from Ambulance import Ambul
 
 class Map(Tk):
@@ -8,20 +9,17 @@ class Map(Tk):
         self.title("Navigator")
         self.geometry("800x600")
         self.columnconfigure(0, weight=5)
-        self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.swap_btn = Button(self, text='23')
         self.canvas = Canvas(self, bg='white')
         self.map = PhotoImage(file="Picture/Map.png")
         self.point = PhotoImage(file="Picture/Point.png")
         self.traffic = PhotoImage(file="Picture/traffic.png")
+        self.ambulance = PhotoImage(file="Picture/ambulance.png")
         self.canvas.grid(row=0, column=0, sticky='wsen')
-        self.swap_btn.grid(row=0, column=1)
         self.x = 0
         self.y = 0
         self.start = None
-        self.finish = None
+        self.ways = []
         self.dist = None
         self.traffic_jams_flag = False
         self.start_traffic_jams = []
@@ -31,7 +29,6 @@ class Map(Tk):
         self.bind("<Button-1>", self.set_traffic_points)
         self.bind("<Button-2>", self.clear_list_of_pares)
         self.bind("<Button-3>", self.find_path_from_to)
-        self.list_of_pares = []
         init_graph()
         graph.create_adj_matrix()
         graph.init_traffic_jams()
@@ -80,67 +77,104 @@ class Map(Tk):
         self.clear_canvas()
         self.canvas.create_image(self.x, self.y, image=self.map, anchor='nw')
         self.render_traffic_jams()
+        for amb in Ambul.brigades:
+            x = graph.get_nearest_by_coordinates(amb.x, amb.y).get_x()
+            y = graph.get_nearest_by_coordinates(amb.x, amb.y).get_y()
+            self.canvas.create_image(x, y, image=self.ambulance)
         if self.start:
             self.render_points_path()
 
     def render_points_path(self):
         vert = graph.get_nearest_by_coordinates(self.start.get_x(), self.start.get_y())
         self.canvas.create_image(vert.get_x(), vert.get_y(), image=self.point, anchor='center')
-        if self.finish:
-            self.render_line_path()
-            self.canvas.create_image(self.finish.get_x(), self.finish.get_y(), image=self.point, anchor='center')
+        self.render_line_path(self.ways)
 
-    def render_line_path(self):
-        temp_coord = self.start.get_coordinates()
-        for node in self.dist[self.finish.get_node()][1]:
-            self.canvas.create_line(temp_coord, node.get_coordinates(), dash=(4, 2), width=3, fill='green')
-            temp_coord = node.get_coordinates()
+    def render_line_path(self, ways):
+        for way in ways:
+            temp_coord = way[0].get_coordinates()
+            for node in way:
+                if way != self.min_path:
+                    self.canvas.create_line(temp_coord, node.get_coordinates(), dash=(4, 2), width=3, fill='orange')
+                    temp_coord = node.get_coordinates()
+                else:
+                    self.canvas.create_line(temp_coord, node.get_coordinates(), dash=(4, 2), width=3, fill='green')
+                    temp_coord = node.get_coordinates()
+
 
     def button_pressed(self, event):
         if event.keysym == "Left":
             if self.x < 0:
                 self.x += 10
                 graph.move_all_vertexes_x(10)
+                for amb in Ambul.brigades:
+                    amb.x += 10
                 self.render_path()
                 print(self.x, self.y)
         elif event.keysym == "Right":
             if self.x > -2830:
                 self.x -= 10
                 graph.move_all_vertexes_x(-10)
+                for amb in Ambul.brigades:
+                    amb.x -= 10
                 self.render_path()
                 print(self.x, self.y)
         elif event.keysym == "Up":
             if self.y < 0:
                 self.y += 10
                 graph.move_all_vertexes_y(10)
+                for amb in Ambul.brigades:
+                    amb.y += 10
                 self.render_path()
                 print(self.x, self.y)
         elif event.keysym == "Down":
             if self.y > -1010:
                 self.y -= 10
                 graph.move_all_vertexes_y(-10)
+                for amb in Ambul.brigades:
+                    amb.y -= 10
                 self.render_path()
                 print(self.x, self.y)
 
-    def clear_list_of_pares(self, event):
-        self.list_of_pares.clear()
+    def clear_list_of_pares(self):
+        self.ways.clear()
 
     def find_path_from_to(self, event):
         if type(event.widget).__name__ == "Canvas":
-            if self.list_of_pares:
-                self.list_of_pares.append(graph.get_nearest_by_coordinates(event.x, event.y))
-                print(graph.get_nearest_by_coordinates(event.x, event.y).get_node(), '\n')  #flag
-                self.dist = graph.A_star(self.list_of_pares[0].get_node(), self.list_of_pares[1].get_node())
-                self.finish = self.list_of_pares[1]
-                self.list_of_pares.clear()
-            else:
-                self.start = None
-                self.finish = None
-                self.render_path()
-                print(graph.get_nearest_by_coordinates(event.x, event.y).get_node())  #flag
-                self.list_of_pares.append(graph.get_nearest_by_coordinates(event.x, event.y))
-                self.start = self.list_of_pares[0]
+            point = graph.get_nearest_by_coordinates(event.x, event.y)
+
+            ways = []
+            min = 99999
+            for amb in Ambul.brigades:
+                way = graph.A_star(graph.get_nearest_by_coordinates(amb.x, amb.y).get_node(), point.get_node())
+                ways.append(way[point.get_node()][1])
+                if way[point.get_node()][0] < min:
+                    self.min_path = way[point.get_node()][1]
+                    min = way[point.get_node()][0]
+                    reccommend_brigade = amb
+            ways[-1], ways[ways.index(self.min_path)] = ways[ways.index(self.min_path)], ways[-1]
+            self.start = point
+            self.ways = ways
             self.render_path()
+            self.reccomendation(reccommend_brigade)
+
+    def reccomendation(self, brigade):
+        def exit():
+            root.destroy()
+        root = Tk()
+        root.title('Reccomendation')
+        str_id = brigade.id
+        str_driver = brigade.driver
+        str_doctor = brigade.doctor
+        id = Label(root, text='Рекомендуємо для екіпажу №' + str(str_id))
+        driver = Label(root, text='Водій: ' + str_driver)
+        doctor = Label(root, text='Доктор: ' + str_doctor)
+        btn = Button(root, text='OK', command=exit)
+        id.pack()
+        driver.pack()
+        doctor.pack()
+        btn.pack()
+        root.mainloop()
+
 
 
 def main():

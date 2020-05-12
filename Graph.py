@@ -1,8 +1,7 @@
 import math
-from myQueue import Queue
-from myQueue import PriorityQueue
 
 inf = 999999999
+TRAFFIC_CONSTANT = 6
 
 class Vertex:
     def __init__(self, x, y, id):
@@ -79,7 +78,7 @@ class Graph:
         for i in range(len(self.adj_mat)):
             for j in range(len(self.adj_mat[i])):
                 if self.adj_mat[i][j] != 0 and self.get_vertex_by_id(i) in way and self.get_vertex_by_id(j) in way:
-                    self.__traffic_jams[i][j] = 10000
+                    self.__traffic_jams[i][j] = TRAFFIC_CONSTANT * self.adj_mat[i][j]
 
     def add_vertex(self, x, y):
         self.__number_vertexes += 1
@@ -121,38 +120,24 @@ class Graph:
                 for col_num in range(len(self.adj_mat[node])) if self.adj_mat[node][col_num] != 0]
 
     def dijkstra(self, node):
-        # Получает индекс узла (или поддерживает передачу int)
         nodenum = self.get_vertex_by_id(node).get_node()
         dist = [None] * len(self.__list_of_vertexes)
         for i in range(len(dist)):
             dist[i] = [float('inf')]
             dist[i].append([self.__list_of_vertexes[nodenum]])
-
         dist[nodenum][0] = 0
-        # Добавляет в очередь все узлы графа
-        # Отмечает целые числа в очереди, соответствующие индексам узла
-        # локаций в массиве self.nodes
         queue = [i for i in range(len(self.__list_of_vertexes))]
-        # Набор увиденных на данный момент номеров
         seen = set()
         while len(queue) > 0:
-            # Получает узел в очереди, который еще не был рассмотрен
-            # и который находится на кратчайшем расстоянии от источника
             min_dist = inf
             min_node = None
             for n in queue:
                 if dist[n][0] < min_dist and n not in seen:
                     min_dist = dist[n][0]
                     min_node = n
-
-            # Добавляет мин. расстояние узла до увиденного, убирает очередь
             queue.remove(min_node)
             seen.add(min_node)
-            # Получает все следующие перескоки
             connections = self.connections_from(min_node)
-            # Для каждой связи обновляет путь и полное расстояние от
-            # исходного узла, если полное расстояние меньше
-            # чем текущее расстояние в массиве dist
             for (node, weight) in connections:
                 tot_dist = weight + min_dist
                 if tot_dist < dist[node.get_node()][0]:
@@ -161,7 +146,8 @@ class Graph:
                     dist[node.get_node()][1].append(node)
         return dist
 
-    def heuristic(self, a, b):
+    @staticmethod
+    def heuristic(a, b):
         (x1, y1) = a.get_x(), a.get_y()
         (x2, y2) = b.get_x(), b.get_y()
         return abs(x1 - x2) + abs(y1 - y2)
@@ -194,5 +180,6 @@ class Graph:
             if self.get_vertex_by_id(min_node).get_node() == self.get_vertex_by_id(goal).get_node():
                 return dist
         return dist
+
 
 graph = Graph()
