@@ -7,17 +7,13 @@ class Map(Tk):
         Tk.__init__(self)
         self.title("Navigator")
         self.geometry("800x600")
-        self.columnconfigure(0, weight=5)
-        self.columnconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.swap_btn = Button(self, text='23')
         self.canvas = Canvas(self, bg='white')
         self.map = PhotoImage(file="Picture/Map.png")
         self.point = PhotoImage(file="Picture/Point.png")
         self.traffic = PhotoImage(file="Picture/traffic.png")
         self.canvas.grid(row=0, column=0, sticky='wsen')
-        self.swap_btn.grid(row=0, column=1)
         self.x = 0
         self.y = 0
         self.start = None

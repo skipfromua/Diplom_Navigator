@@ -45,7 +45,7 @@ class Vertex:
         self.__y += dy
 
 
-def connect_vertexes(v1, v2):  # this function add oriented rib
+def connect_vertexes(v1, v2):
     v1.add_vertex(v2)
     v2.add_vertex(v1)
 
@@ -128,6 +128,7 @@ class Graph:
         dist[nodenum][0] = 0
         queue = [i for i in range(len(self.__list_of_vertexes))]
         seen = set()
+
         while len(queue) > 0:
             min_dist = inf
             min_node = None

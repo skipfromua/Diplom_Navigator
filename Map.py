@@ -1,6 +1,6 @@
 from tkinter import *
-from Graph_db import graph, init_graph, write_to_file, connect_vertexes, save_ribs
-import time
+from Graph_db import graph, init_graph
+
 from Ambulance import Ambul
 
 class Map(Tk):
